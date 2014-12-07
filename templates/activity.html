@@ -1,0 +1,74 @@
+<html>
+<head>
+    <title>Activity for {{ name }}</title>
+    <script src="{{ chart_url }}"></script>
+    <script src="{{ jquery_url }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ main_css_url }}"</link>
+</head>
+<body>
+    <div id="content">
+        <div class="chart_title">Activity Times for {{ name }}</div><br/>
+        {% if success %}
+        <canvas id="activity_chart" width="500" height="500"></canvas>
+        {% else %}
+        <div class="error">
+            Failed to lookup activity for {{ name }}.<br/>
+            Error: {{ message }}
+        </div>
+        {% endif %}
+    </div>
+    <script>
+var ctx = $("#activity_chart").get(0).getContext("2d");
+var chart = new Chart(ctx);
+
+var data = {
+    labels : {{ labels|tojson }},
+    datasets : [
+        {
+            label       : "Average Kills per Hour",
+            fillColor   : {{ fill_colors|tojson }},
+            data        : {{ data|tojson }}
+        }
+    ]
+};
+
+var options = {
+    xAxisLabel      : "Hour",
+    yAxisLabel      : "Kills per Hour",
+    scaleOverride   : true,
+    scaleStart      : 0,
+    scaleSteps      : {{ scale_steps|tojson }},
+    scaleStepWidth  : 1
+};
+
+chart.Bar(data, options);
+    </script>
+
+    <form id="inputs" action="">
+        <label for="name">Name:</label>
+        <input type="text" id="name" value="{{ name }}">
+
+        <select id="type">
+            <option value="char" {% if type == "char" %}selected{% endif %}>Character</option>
+            <option value="corp" {% if type == "corp" %}selected{% endif %}>Corporation</option>
+        </select><br/>
+
+        <label for="days">Days to Fetch:</label>
+        <input style="width: 50px;" type="number" id="days" value="{{ n_days }}">
+
+        <input type="submit" value="Get Activity">
+    </form>
+
+    <script>
+$("#inputs").submit(function(event) {
+    event.preventDefault();
+
+    var type = $("#type").val();
+    var name = $("#name").val();
+    var days = $("#days").val();
+
+    window.location = [window.location.origin, "activity", type, name, days].join("/");
+});
+    </script>
+</body>
+</html>
