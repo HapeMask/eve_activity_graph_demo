@@ -260,11 +260,16 @@ class VMFMM(BaseEstimator):
 
                 # M step
                 self.weights_[:] = responsibilities.mean(axis=0)
-                self.means_[:] = (X[:,np.newaxis] * responsibilities[:,:,np.newaxis]).sum(axis=0)
-                mean_norms = np.linalg.norm(self.means_, axis=-1)
-                r = mean_norms / (N*self.weights_)
-                self.means_ /= mean_norms[:, np.newaxis]
-                self.precs_ = r*(self.n_features - r**2) / (1 - r**2)
+
+                # Don't update components whose weights fell to 0. Is this
+                # correct? Hack for use in webapp.
+                ## TODO: REMOVE BEFORE SUBMITTING TO SKLEARN!
+                good_comps = (abs(self.weights_) > 1e-8)
+                self.means_[good_comps] = (X[:,np.newaxis] * responsibilities[:,good_comps,np.newaxis]).sum(axis=0)
+                mean_norms = np.linalg.norm(self.means_[good_comps], axis=-1)
+                r = mean_norms / (N*self.weights_[good_comps])
+                self.means_[good_comps] /= mean_norms[:, np.newaxis]
+                self.precs_[good_comps] = r*(self.n_features - r**2) / (1 - r**2)
 
             if logprobs[-1] > max_log_prob:
                 max_log_prob = logprobs[-1]
@@ -297,8 +302,13 @@ class VMFMM(BaseEstimator):
         """
         X = check_angular(X)
 
-        logprobs = (log_vmf_pdf(X, self.means_, self.precs_) +
-                    np.log(self.weights_[np.newaxis]))
+        # Don't use components whose weights fell to 0. Is this correct? Hack
+        # for use in webapp.
+        ## TODO: REMOVE BEFORE SUBMITTING TO SKLEARN!
+        good_comps = (abs(self.weights_) > 1e-8)
+
+        logprobs = (log_vmf_pdf(X, self.means_[good_comps], self.precs_) +
+                    np.log(self.weights_[good_comps][np.newaxis]))
         logprob = logsumexp(logprobs, axis=1)
 
         responsibilities = np.exp(logprobs - logprob[:, np.newaxis])
