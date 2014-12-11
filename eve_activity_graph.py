@@ -45,7 +45,7 @@ def activity(atype, name, days):
     # Set a different color for the peak time bars.
     fill_colors = 24*["rgb(64,96,192)"]
     for pt in peaks:
-        fill_colors[int(round(pt))] = "rgb(192,64,64)"
+        fill_colors[min(int(round(pt)), len(fill_colors)-1)] = "rgb(192,64,64)"
 
     template_vars = {"name"         : name,
                      "jquery_url"   : url_for("static", filename="js/jquery.min.js"),
