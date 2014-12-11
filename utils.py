@@ -24,6 +24,9 @@ ZKILL_API_BASE = "https://zkillboard.com/api"
 ZKILL_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 ZKILL_TIMESTAMP_FORMAT = "%Y%m%d%H%M"
 ZKILL_MAX_KILLS_PER_RESPONSE = 200
+ZKILL_TYPE_MAP = {"char"  : "characterID",
+                  "corp"  : "corporationID",
+                  "sys"   : "solarSystemID"}
 
 # Allows zlib.decompress to decompress gzip-compressed strings as well.
 # From zlib.h header file, not documented in Python.
@@ -37,16 +40,18 @@ def date_to_timestamp(date):
     """Convert a datetime.date object to a seconds-since-epoch timestamp."""
     return (date.toordinal() - EPOCH_START) * SECONDS_PER_DAY
 
-def character_id_from_name(name):
+def id_from_name(name):
     """Get a character/corporation ID by name using the Eve API."""
     response = urlopen(EVE_API_CHAR_ID_URL % quote(name))
     if status(response) not in [200,304]:
         raise RuntimeError("Got invalid HTTP status from Eve API: %d" % status(response))
-    tree = xmlet.fromstring(response.read())
 
+    tree = xmlet.fromstring(response.read())
     cid = int(tree.find("result/rowset/row").get("characterID"))
+
     if cid == 0:
         raise ValueError("ID for %s not found." % name)
+
     return cid
 
 def make_zkill_api_url(cid, id_type, n_days, page):
@@ -87,7 +92,7 @@ def kill_times_from_zkill_json(zkill_json):
                  (dt.hour + dt.minute/60. + dt.second/(60.**2)))
                 for dt in datetimes])
 
-def get_kills_for_id(cid, id_type, n_days):
+def get_zkills_for_id(cid, id_type, n_days):
     """Gets a list of JSON-decoded kills from zkillboard for the given
     character ID over the past n_days days."""
     page = 1
@@ -122,21 +127,12 @@ def get_kills_for_id(cid, id_type, n_days):
 
     return kills
 
-def get_kills_for_char(name, n_days):
-    cid = character_id_from_name(name)
-    return get_kills_for_id(cid, "characterID", n_days)
-
-def get_kills_for_corp(name, n_days):
-    cid = character_id_from_name(name)
-    return get_kills_for_id(cid, "corporationID", n_days)
-
 def get_kills_and_peaks(name, name_type, n_days, n_peaks=2):
-    if name_type == "char":
-        kills = get_kills_for_char(name, n_days)
-    elif name_type == "corp":
-        kills = get_kills_for_corp(name, n_days)
-    else:
+    if name_type not in ZKILL_TYPE_MAP:
         raise ValueError("Invalid name type: %s" % name_type)
+
+    cid = id_from_name(name)
+    kills = get_zkills_for_id(cid, ZKILL_TYPE_MAP[name_type], n_days)
 
     if len(kills) == 0:
         return 24*[0], n_peaks*[0]

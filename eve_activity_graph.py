@@ -2,7 +2,7 @@ import os
 from flask import Flask, url_for, render_template, abort
 from flask.ext.cache import Cache
 
-from utils import get_kills_and_peaks, SECONDS_PER_DAY
+from utils import get_kills_and_peaks, SECONDS_PER_DAY, ZKILL_TYPE_MAP
 
 ACTIVITY_CACHE_TIMEOUT = SECONDS_PER_DAY
 HOUR_LABELS = ["%d:00" % h for h in range(24)]
@@ -19,7 +19,7 @@ cache = Cache(app, config={"CACHE_TYPE" : "filesystem",
 @app.route("/activity/<atype>/<name>/<days>")
 @cache.cached(timeout=ACTIVITY_CACHE_TIMEOUT)
 def activity(atype, name, days):
-    if atype not in ["char", "corp"]:
+    if atype not in ZKILL_TYPE_MAP:
         abort(404)
 
     try:
