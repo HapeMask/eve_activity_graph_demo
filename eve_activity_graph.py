@@ -1,5 +1,6 @@
 import os
-from flask import Flask, url_for, render_template, abort
+from flask import Flask
+from flask import url_for, render_template, abort, request, redirect
 from flask.ext.cache import Cache
 
 from utils import get_kills_and_peaks, SECONDS_PER_DAY, ZKILL_TYPE_MAP
@@ -14,12 +15,27 @@ app = Flask(__name__)
 cache = Cache(app, config={"CACHE_TYPE" : "filesystem",
                            "CACHE_DIR"  : "static/cache"})
 
+@app.route("/activity", methods=["POST", "GET"])
+def activity_base():
+    if request.method == "POST":
+        name = request.form["name"]
+        nametype = request.form["type"]
+        days = request.form["days"]
+        return redirect(url_for("activity",
+                                name =      name,
+                                nametype =  nametype,
+                                days =      days))
+    else:
+        return render_template("activity_base.html",
+                main_css_url = url_for("static", filename="css/main.css"),
+                jquery_url   = url_for("static", filename="js/jquery.min.js"))
+
 # Cache decorator needs to be first on the stack, since that's what the route
 # will call.
-@app.route("/activity/<atype>/<name>/<days>")
+@app.route("/activity/<nametype>/<name>/<days>")
 @cache.cached(timeout=ACTIVITY_CACHE_TIMEOUT)
-def activity(atype, name, days):
-    if atype not in ZKILL_TYPE_MAP:
+def activity(nametype, name, days):
+    if nametype not in ZKILL_TYPE_MAP:
         abort(404)
 
     try:
@@ -28,7 +44,7 @@ def activity(atype, name, days):
         abort(404)
 
     try:
-        bars, peaks = get_kills_and_peaks(name, atype, days)
+        bars, peaks = get_kills_and_peaks(name, nametype, days)
         success = True
         message = ""
     except Exception as e:
@@ -56,7 +72,7 @@ def activity(atype, name, days):
                      "fill_colors"  : fill_colors,
                      "scale_steps"  : 1+max([int(h) for h in bars]),
                      "n_days"       : days,
-                     "type"         : atype,
+                     "type"         : nametype,
                      "success"      : success,
                      "message"      : message
                      }

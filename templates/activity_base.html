@@ -1,0 +1,44 @@
+<html>
+<head>
+    <title>Eve Activity Graph</title>
+    <script src="{{ jquery_url }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ main_css_url }}"</link>
+</head>
+<body>
+    <div id="content">
+        <span style="font-size: 18pt; display: table; margin: 0 auto;">
+            Eve Activity Graph
+        </span>
+        <span style="font-size: 12pt; display: table; margin: 0 auto;">
+            Enter a character, corporation, or solar system name. (includes W-space)
+        </span><br/>
+        <form id="inputs" action="/activity" method="POST">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name">
+
+            <select id="type" name="type">
+                <option value="char">Character</option>
+                <option value="corp">Corporation</option>
+                <option value="sys">Solar System</option>
+            </select>
+
+            <label for="days" style="padding-left: 10px;">Days to Fetch:</label>
+            <input style="width: 50px; padding-right: 10px;" type="number" id="days" name="days" value="10">
+
+            <input type="submit" class="submit" value="Get Activity">
+        </form>
+    </div>
+
+    <script>
+$("#inputs").submit(function(event) {
+    event.preventDefault();
+
+    var type = $("#type").val();
+    var name = $("#name").val();
+    var days = $("#days").val();
+
+    window.location = [window.location.origin, "activity", type, name, days].join("/");
+});
+    </script>
+</body>
+</html>

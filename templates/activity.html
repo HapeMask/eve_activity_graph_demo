@@ -44,18 +44,18 @@ var options = {
 chart.Bar(data, options);
     </script>
 
-    <form id="inputs" action="">
-        <label for="name">Name:</label>
-        <input type="text" id="name" value="{{ name }}">
+    <form id="inputs" action="/activity" method="POST">
+        <label style="width: 150px;" for="name">Name:</label>
+        <input type="text" id="name" name="name" value="{{ name }}">
 
-        <select id="type">
+        <select id="type" name="type">
             <option value="char" {% if type == "char" %}selected{% endif %}>Character</option>
             <option value="corp" {% if type == "corp" %}selected{% endif %}>Corporation</option>
             <option value="sys"  {% if type == "sys"  %}selected{% endif %}>Solar System</option>
         </select><br/>
 
-        <label for="days">Days to Fetch:</label>
-        <input style="width: 50px;" type="number" id="days" value="{{ n_days }}">
+        <label style="width: 150px;" for="days">Days to Fetch:</label>
+        <input style="width: 50px;" type="number" id="days" name="days" value="{{ n_days }}">
 
         <input type="submit" value="Get Activity">
     </form>
